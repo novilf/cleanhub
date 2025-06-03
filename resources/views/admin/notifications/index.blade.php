@@ -15,7 +15,10 @@
               <th>No</th>
               <th>Date</th>
               <th>Username</th>
+              <th>Service Type</th>
+              <th>Detail Clothes</th>
               <th>Price</th>
+              <th>Payment Status</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -25,16 +28,41 @@
               <td>{{ $index + 1 }}.</td>
               <td class="fw-bold">{{ $notif['date'] }}</td>
               <td>{{ $notif['username'] }}</td>
+              <td>{{ $notif['service_type'] }}</td>
+              <td>{{ $notif['detail_clothes'] }}</td>
               <td>Rp{{ number_format($notif['price'], 0, ',', '.') }}</td>
               <td>
-                <!-- ACC Payment -->
-                <button class="btn btn-success btn-sm me-1" title="ACC Payment" data-bs-toggle="modal" data-bs-target="#accPaymentModal">
-                  <i class="bi bi-check-circle"></i>
+                @if($notif['payment_status'] == 'paid')
+                  <span class="badge bg-success">Paid</span>
+                @else
+                  <span class="badge bg-danger">Unpaid</span>
+                @endif
+              </td>
+              <td>
+                <!-- Detail Order -->
+                <button class="btn btn-warning btn-sm text-white me-1" title="Detail Order" data-bs-toggle="modal" data-bs-target="#detailOrderModal" 
+                  data-order-id="{{ $notif['id'] }}"
+                  data-date="{{ $notif['date'] }}"
+                  data-service="{{ $notif['service_type'] }}"
+                  data-details="{{ $notif['detail_clothes'] }}"
+                  data-price="{{ $notif['price'] }}"
+                  data-status="{{ $notif['payment_status'] }}">
+                  <i class="bi bi-clipboard-data"></i>
                 </button>
 
-                <!-- Detail Order -->
-                <button class="btn btn-warning btn-sm text-white me-1" title="Detail Order" data-bs-toggle="modal" data-bs-target="#detailOrderModal">
-                  <i class="bi bi-clipboard-data"></i>
+                <!-- Validate Payment -->
+                @if($notif['payment_status'] == 'unpaid')
+                <form action="{{ route('orders.validatePayment', $notif['id']) }}" method="POST" class="d-inline">
+                  @csrf
+                  <button type="submit" class="btn btn-success btn-sm me-1" title="Validate Payment">
+                    <i class="bi bi-check-circle"></i>
+                  </button>
+                </form>
+                @endif
+
+                <!-- Manage Order -->
+                <button class="btn btn-outline-primary btn-sm" title="Manage Order" data-bs-toggle="modal" data-bs-target="#manageOrderModal" data-order-id="{{ $notif['id'] }}">
+                  <i class="bi bi-pencil-square"></i>
                 </button>
               </td>
             </tr>
@@ -52,35 +80,6 @@
   @endif
 </div>
 
-<!-- Modal ACC Payment -->
-<div class="modal fade" id="accPaymentModal" tabindex="-1" aria-labelledby="accPaymentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form action="{{ route('orders.updatePayment') }}" method="POST">
-        @csrf
-        @method('PATCH') <!-- kalau kamu pakai PATCH untuk update -->
-        <div class="modal-header">
-          <h5 class="modal-title w-100 text-center fw-bold" id="accPaymentModalLabel" style="color: #001F54;">Check Order Payment</h5>
-          <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center">
-          <p class="fs-5">Have you received the 20 thousand rupiah?</p>
-
-          <!-- Kamu butuh ID order untuk diupdate, misalnya di hidden input -->
-          <input type="hidden" name="order_id" id="order_id" value="">
-
-          <div class="d-flex justify-content-center gap-3 mt-4">
-            <button type="submit" class="btn btn-success px-4">Yes</button>
-            <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">No</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-
-
 <!-- Modal Order Details -->
 <div class="modal fade" id="detailOrderModal" tabindex="-1" aria-labelledby="detailOrderModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -93,7 +92,6 @@
         <div class="table-responsive">
           <table class="table table-bordered text-center">
             <thead class="table-primary">
-              
               <tr>
                 <th>Date</th>
                 <th>Service Type</th>
@@ -105,18 +103,13 @@
             </thead>
             <tbody>
               <tr>
-                <td>2025-05-30</td>
-                <td>Dry Clean</td>
-                <td>Shirt x2, Pants x1</td>
-                <td>Rp20.000</td>
+                <td id="detail-date"></td>
+                <td id="detail-service"></td>
+                <td id="detail-clothes"></td>
+                <td id="detail-price"></td>
+                <td id="detail-status"></td>
                 <td>
-                  <span class="badge bg-success">Paid</span>
-                </td>
-                <td>
-                  <!-- Tombol Manage Order (panggil modal berikutnya) -->
-                  <button class="btn btn-outline-primary btn-sm" title="Manage Order" data-bs-toggle="modal" data-bs-target="#manageOrderModal" data-bs-dismiss="modal">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
+                  <!-- Removed Manage Order button from here -->
                 </td>
               </tr>
             </tbody>
@@ -136,7 +129,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
-        
         <form id="manageOrderForm" action="{{ route('orders.manage') }}" method="POST">
           @csrf
           <input type="hidden" name="order_id" id="orderIdInput">
@@ -155,7 +147,6 @@
             <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">Cancel</button>
           </div>
         </form>
-        
       </div>
     </div>
   </div>
@@ -163,28 +154,33 @@
 
 @push('scripts')
 <script>
-  // Modal Manage Order dipanggil dari tombol Manage Order di modal Detail Order otomatis tutup modal detail
-  var manageOrderModalEl = document.getElementById('manageOrderModal')
-  var detailOrderModalEl = document.getElementById('detailOrderModal')
-
-  // Saat tombol Manage Order di modal Detail Order diklik
-  document.querySelectorAll('[data-bs-target="#manageOrderModal"]').forEach(function(button) {
-    button.addEventListener('click', function () {
-      var detailModal = bootstrap.Modal.getInstance(detailOrderModalEl);
-      if(detailModal) detailModal.hide();
+  // Set order details for detail modal
+  document.querySelectorAll('[data-bs-target="#detailOrderModal"]').forEach(function(button) {
+    button.addEventListener('click', function() {
+      document.getElementById('detail-date').textContent = this.dataset.date;
+      document.getElementById('detail-service').textContent = this.dataset.service;
+      document.getElementById('detail-clothes').textContent = this.dataset.details;
+      document.getElementById('detail-price').textContent = 'Rp' + new Intl.NumberFormat('id-ID').format(this.dataset.price);
+      document.getElementById('detail-status').innerHTML = this.dataset.status === 'paid' 
+        ? '<span class="badge bg-success">Paid</span>' 
+        : '<span class="badge bg-danger">Unpaid</span>';
     });
   });
 
-  // Simulasi submit form Manage Order
-  document.getElementById('manageOrderForm').addEventListener('submit', function (e) {
-    e.preventDefault();
+  // Set order ID for manage modal
+  document.querySelectorAll('[data-bs-target="#manageOrderModal"]').forEach(function(button) {
+    button.addEventListener('click', function() {
+      document.getElementById('orderIdInput').value = this.dataset.orderId;
+    });
+  });
+
+  // Form validation for manage order
+  document.getElementById('manageOrderForm').addEventListener('submit', function(e) {
     const status = document.getElementById('statusSelect').value;
     if(!status || status === "Manage Order") {
+      e.preventDefault();
       alert('Please select a status.');
-      return;
     }
-    alert('Order set to "' + status + '" (simulasi).');
-    bootstrap.Modal.getInstance(manageOrderModalEl).hide();
   });
 </script>
 @endpush

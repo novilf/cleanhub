@@ -45,18 +45,20 @@ class OrderController extends Controller
     // Tambahan: method index untuk halaman notifications
     public function index()
     {
-        $orders = Order::with('usermobile')->get();
+        $orders = Order::with('usermobile')
+            ->where('payment_status', 'paid')
+            ->get();
         $notifications = $orders->map(function ($item) {
             return [
                 'id' => $item->id,
                 'date' => date('Y-m-d', strtotime($item->date)),
                 'username' => $item->usermobile->name ?? 'Unknown',
                 'price' => $item->price,
-                'items' => json_decode($item->detail_clothes, true), // ← key 'items' untuk Blade
+                'detail_clothes' => json_decode($item->detail_clothes, true) ?? [],
                 'payment_status' => $item->payment_status,
                 'laundry_status' => $item->laundry_status,
-                'status' => $item->laundry_status, // ← tambahan biar view nggak error
-                'total_price' => $item->price,     // ← tambahan biar view nggak error
+                'status' => $item->laundry_status,
+                'total_price' => $item->price,
             ];
         })->toArray();
         return view('admin.orders.index', ['notifications' => $notifications]);

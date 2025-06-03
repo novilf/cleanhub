@@ -41,8 +41,8 @@
                             <td><strong>{{ $order['username'] }}</strong></td>
 
                             <td>
-                                @foreach($order['items'] as $item)
-                                    {{ $item['name'] }} {{ $item['qty'] }}x<br>
+                                @foreach(($order['detail_clothes'] ?? []) as $item)
+                                    {{ $item['name'] ?? '-' }} {{ $item['qty'] ?? '' }}x<br>
                                 @endforeach
                             </td>
                             <td>Rp{{ number_format($order['total_price'], 0, ',', '.') }}</td>
