@@ -1,0 +1,53 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+.bg-cleanhub {
+    background-color: #3546ab; /* ganti dengan warna persis dari desain */
+}
+
+/*login*/
+/* Blur background ketika modal aktif */
+.login-modal {
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-content {
+    background: white;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    text-align: left;
+    position: relative;
+}
+
+.login-logo {
+    display: block;
+    margin: 0 auto 1rem auto;
+    width: 80px;
+}
+
+.register-content {
+    max-width: 700px;
+}
+
+.login-content input {
+    border: 1px solid #4051d3;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.modal-backdrop.show {
+    backdrop-filter: blur(5px);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
